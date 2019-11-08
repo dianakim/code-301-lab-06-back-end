@@ -23,18 +23,15 @@ Built with Javascript, HTML, CSS
 ## Credits and Collaborations
 <!-- Give credit (and a link) to other people or resources that helped you build this application. -->
 [Node JS Docs](https://nodejs.org/en/)
-
 [NPM JS Docs](https://docs.npmjs.com/)
-
 [Express JS Docs](http://expressjs.com/en/4x/api.html)
-
 [Dotenv Docs](https://www.npmjs.com/package/dotenv)
 
 
 ### Time Estimate
 
 Feature #1: 
-Estimate of time needed to complete: 
-Start time: 
+Estimate of time needed to complete: 24 hours
+Start time: 11:30am
 Finish time: 
 Actual time needed to complete: 

@@ -1,66 +1,74 @@
 'use strict';
 
-// load environment variable from .env
+//load Environment veriable from the .env
 require('dotenv').config();
 
-// declare application dependencies
+//declare Application Dependencies
 const express = require('express');
 const cors = require('cors');
+const superagent = require('superagent');
 
-// application setup
+//Application setup
 const PORT = process.env.PORT;
-const app  = express();
+const app = express(); //convention, just so that it looks better
 app.use(cors());
 
-//route syntax = app.<operation>('<route>', callback );
-app.get('/', (request, response) => {
-  response.send('Home Page!');
-})
+//Begin API routes
+app.get('/location',getLocation);
+app.get('/weather',getWeather);
 
-app.get('/bad', (request, response) => {
-  throw new Error('bummer');
-})
 
-// the callback can be a separate function which makes it more readable
-app.get('/about', aboutUsHandler);
+//404 if the above api routes are not called
+app.get('*', (request, response) => {
+  response.status(404).send('No such page');
+});
 
-function aboutUsHandler(request, response) {
-  response.status(200).send('This is the About Us page.html');
-}
-
-// app.get('*', (request, response) => {
-//     response.status(404).send('This route does not exist')
-// })
-
-//API routes
-app.get('/location', (request, response) => {
+function getLocation(request, response) {
   try{
-    const geoData = require('./data/geo.json');
-    const city = request.query.data;
-    const locationData = new Location(city, geoData);
-    console.log('locationData ',locationData);
-    response.send(locationData);
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.GEOCODE_API_KEY}`;
+    superagent.get(url)
+      .then( data => {
+        const geoData = data.body;
+        const location = (new Location(request.query.data, geoData));
+        response.status(200).send(location);
+      });
   }
   catch(error){
-    //some function or error message
     errorHandler('So sorry, something went wrong', request, response);
   }
-})
+}
 
-//Helper Funcitons
-function Location(city, geoData){
+function getWeather(request, response){
+  const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+  console.log('lat/long', request.query.data.latitude);
+  superagent.get(url)
+    .then( data => {
+      const weatherSummaries = data.body.daily.data.map(day => {
+        return new Weather(day);
+      });
+      response.status(200).send(weatherSummaries);
+    })
+    .catch( () => {
+      errorHandler('Something went wrong', request, response);
+    });
+}
+
+function Location(city, geoData) {
   this.search_query = city;
   this.formatted_query = geoData.results[0].formatted_address;
   this.latitude = geoData.results[0].geometry.location.lat;
   this.longitude = geoData.results[0].geometry.location.lng;
 }
 
-function errorHandler(error, request, response) {
+function Weather(day){
+  this.forecast = day.summary;
+  this.time = new Date(day.time * 1000).toString().slice(4,11);
+}
+
+function errorHandler (error, request, response) {
   response.status(500).send(error);
 }
 
-
-
-//Ensure the server is listening for requests
-// THIS MUST BE AT THE BOTTOM OF THE FILE!!!!
-app.listen(PORT, () => console.log(`The server is up, listening on ${PORT}`));
+//Ensure that the server is listening for requests
+//THIS MUST BE AT THE BOTTOM OF THE FILE
+app.listen(PORT, () => console.log(`The server is up listening on ${PORT}`));
